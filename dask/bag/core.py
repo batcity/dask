@@ -1870,7 +1870,13 @@ def concat(bags):
 def reify(seq):
     if isinstance(seq, Iterator):
         seq = list(seq)
-    if len(seq) and isinstance(seq[0], Iterator):
+    try:
+        first = next(iter(seq))
+    except StopIteration:
+        return seq  # empty iterator
+    except TypeError:
+        return seq  # not iterable (e.g., int, csr_array)
+    if isinstance(first, Iterator):
         seq = list(map(list, seq))
     return seq
 
@@ -2501,6 +2507,7 @@ def groupby_disk(b, grouper, npartitions=None, blocksize=2**20):
 
 
 def empty_safe_apply(func, part, is_last):
+
     if isinstance(part, Iterator):
         try:
             _, part = peek(part)
@@ -2508,10 +2515,16 @@ def empty_safe_apply(func, part, is_last):
             if not is_last:
                 return no_result
         return func(part)
-    elif not is_last and len(part) == 0:
-        return no_result
-    else:
-        return func(part)
+
+    if not is_last:
+        # Skip empty check for objects that do not support len(), e.g., sparse arrays
+        try:
+            if len(part) == 0:
+                return no_result
+        except TypeError:
+            pass
+
+    return func(part)
 
 
 def empty_safe_aggregate(func, parts, is_last):
