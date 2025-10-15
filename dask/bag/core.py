@@ -1875,7 +1875,7 @@ def reify(seq):
     except StopIteration:
         return seq  # empty iterator
     except TypeError:
-        return seq  # not iterable (e.g., int, csr_array)
+        return seq  # not iterable
     if isinstance(first, Iterator):
         seq = list(map(list, seq))
     return seq
@@ -2516,7 +2516,7 @@ def empty_safe_apply(func, part, is_last):
         return func(part)
 
     if not is_last:
-        # Skip empty check for objects that do not support len(), e.g., sparse arrays
+        # Skip empty check for objects that do not support len()
         try:
             if len(part) == 0:
                 return no_result
