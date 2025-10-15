@@ -2507,7 +2507,6 @@ def groupby_disk(b, grouper, npartitions=None, blocksize=2**20):
 
 
 def empty_safe_apply(func, part, is_last):
-
     if isinstance(part, Iterator):
         try:
             _, part = peek(part)
