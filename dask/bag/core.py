@@ -77,6 +77,7 @@ from dask.utils import (
     parse_bytes,
     system_encoding,
     takes_multiple_arguments,
+    is_empty,
 )
 
 DEFAULT_GET = named_schedulers.get("processes", named_schedulers["sync"])
@@ -2512,14 +2513,11 @@ def empty_safe_apply(func, part, is_last):
             if not is_last:
                 return no_result
         return func(part)
+    
+    print("am i getting here")
 
-    if not is_last:
-        # Skip empty check for objects that do not support len()
-        try:
-            if len(part) == 0:
-                return no_result
-        except TypeError:
-            pass
+    if not is_last and is_empty(part):
+        return no_result
 
     return func(part)
 
