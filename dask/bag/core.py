@@ -1874,8 +1874,6 @@ def reify(seq):
         first = next(iter(seq))
     except StopIteration:
         return seq  # empty iterator
-    except TypeError:
-        return seq  # not iterable
     if isinstance(first, Iterator):
         seq = list(map(list, seq))
     return seq
