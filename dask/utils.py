@@ -2366,4 +2366,3 @@ def is_empty(obj):
 
     # Fallback: assume non-empty
     return False
-
