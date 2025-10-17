@@ -2513,8 +2513,6 @@ def empty_safe_apply(func, part, is_last):
             if not is_last:
                 return no_result
         return func(part)
-    
-    print("am i getting here")
 
     if not is_last and is_empty(part):
         return no_result
