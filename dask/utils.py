@@ -2331,8 +2331,7 @@ def is_empty(obj):
     Duck-typed check for “emptiness” of an object.
 
     Works for standard sequences (lists, tuples, etc.), NumPy arrays,
-    and sparse-like objects (e.g., SciPy sparse arrays) without importing
-    any third-party libraries.
+    and sparse-like objects (e.g., SciPy sparse arrays).
 
     The function checks:
         1. If the object supports len(), returns True if len(obj) == 0.
@@ -2356,11 +2355,9 @@ def is_empty(obj):
     try:
         return len(obj) == 0
     except TypeError:
-        print("what about here")
         pass
 
     # Sparse-like objects
-    print("is this sparse array empty?")
     if hasattr(obj, "nnz"):
         print("this sparse array is empty")
         return obj.nnz == 0
