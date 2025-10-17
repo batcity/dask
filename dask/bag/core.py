@@ -2513,11 +2513,10 @@ def empty_safe_apply(func, part, is_last):
             if not is_last:
                 return no_result
         return func(part)
-
-    if not is_last and is_empty(part):
+    elif not is_last and is_empty(part):
         return no_result
-
-    return func(part)
+    else:
+        return func(part)
 
 
 def empty_safe_aggregate(func, parts, is_last):
