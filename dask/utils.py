@@ -2359,7 +2359,6 @@ def is_empty(obj):
 
     # Sparse-like objects
     if hasattr(obj, "nnz"):
-        print("this sparse array is empty")
         return obj.nnz == 0
     if hasattr(obj, "shape"):
         return 0 in obj.shape
