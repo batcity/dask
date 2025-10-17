@@ -72,12 +72,12 @@ from dask.utils import (
     funcname,
     get_default_shuffle_method,
     insert,
+    is_empty,
     iter_chunks,
     key_split,
     parse_bytes,
     system_encoding,
     takes_multiple_arguments,
-    is_empty,
 )
 
 DEFAULT_GET = named_schedulers.get("processes", named_schedulers["sync"])

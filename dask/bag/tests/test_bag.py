@@ -23,15 +23,15 @@ from dask._task_spec import List, Task
 from dask.bag.core import (
     Bag,
     collect,
+    empty_safe_apply,
     from_delayed,
     lazify,
     lazify_task,
+    no_result,
     partition,
     reduceby,
     reify,
     total_mem_usage,
-    empty_safe_apply,
-    no_result,
 )
 from dask.bag.utils import assert_eq
 from dask.blockwise import Blockwise
@@ -1751,33 +1751,39 @@ def test_map_total_mem_usage():
     total_mem_c = sum(c.map_partitions(total_mem_usage).compute())
     assert total_mem_b == total_mem_c
 
+
 def test_reify_empty_iterator():
     seq = iter([])
     result = reify(seq)
     # It should return the same empty iterator (or equivalent)
     assert list(result) == []
 
+
 def test_reify_iterator_of_iterators():
     seq = iter([iter([1, 2]), iter([3, 4])])
     result = reify(seq)
     # Each nested iterator should be materialized into a list
     assert result == [[1, 2], [3, 4]]
-    
+
+
 def test_empty_safe_apply_with_fake_sparse():
     class FakeSparse:
         def __init__(self, nnz):
             self.nnz = nnz
 
-    def f(x): return "called"
+    def f(x):
+        return "called"
 
     assert empty_safe_apply(f, FakeSparse(0), is_last=False) is no_result
     assert empty_safe_apply(f, FakeSparse(5), is_last=False) == "called"
-    
+
+
 def test_empty_safe_apply_numpy():
     np = pytest.importorskip("numpy")
     from dask.bag.core import empty_safe_apply, no_result
 
-    def f(x): return "ok"
+    def f(x):
+        return "ok"
 
     assert empty_safe_apply(f, np.array([]), is_last=False) is no_result
     assert empty_safe_apply(f, np.array([1, 2]), is_last=False) == "ok"

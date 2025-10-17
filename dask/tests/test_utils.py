@@ -31,6 +31,7 @@ from dask.utils import (
     getargspec,
     has_keyword,
     is_arraylike,
+    is_empty,
     itemgetter,
     iter_chunks,
     memory_repr,
@@ -45,7 +46,6 @@ from dask.utils import (
     takes_multiple_arguments,
     tmpfile,
     typename,
-    is_empty,
 )
 from dask.utils_test import inc
 
@@ -950,6 +950,7 @@ def test_get_meta_library_gpu():
         da.from_array([]).to_backend("cupy")
     )
 
+
 def test_is_empty_list_and_tuple():
     assert is_empty([]) is True
     assert is_empty([1]) is False
@@ -968,14 +969,17 @@ def test_is_empty_numpy_array():
 
 def test_is_empty_fake_sparse_like_object():
     """Simulate sparse arrays via fake .nnz and .shape attributes."""
+
     class FakeSparse:
         def __init__(self, nnz, shape):
             self.nnz = nnz
             self.shape = shape
 
-    assert is_empty(FakeSparse(0, (10, 10))) is True     # nnz == 0 → True
-    assert is_empty(FakeSparse(5, (10, 10))) is False    # nnz != 0 → False
-    assert is_empty(FakeSparse(10, (0, 5))) is False     # nnz != 0 → False (never checks shape)
+    assert is_empty(FakeSparse(0, (10, 10))) is True  # nnz == 0 → True
+    assert is_empty(FakeSparse(5, (10, 10))) is False  # nnz != 0 → False
+    assert (
+        is_empty(FakeSparse(10, (0, 5))) is False
+    )  # nnz != 0 → False (never checks shape)
 
 
 def test_is_empty_object_with_nnz_only():
@@ -1005,9 +1009,11 @@ def test_is_empty_fallback_object():
 
 def test_is_empty_typeerror_in_len():
     """Force TypeError in len() to trigger nnz/shape logic."""
+
     class FakeObj:
         def __len__(self):
             raise TypeError
+
         nnz = 0
 
     assert is_empty(FakeObj()) is True

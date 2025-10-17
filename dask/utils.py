@@ -2325,7 +2325,8 @@ class disable_gc(ContextDecorator):
         if self._gc_enabled:
             gc.enable()
         return False
-    
+
+
 def is_empty(obj):
     """
     Duck-typed check for “emptiness” of an object.
