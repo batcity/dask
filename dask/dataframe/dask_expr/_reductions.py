@@ -800,8 +800,16 @@ class Reduction(ApplyConcatApply):
 
     @classmethod
     def chunk(cls, df, **kwargs):
-        out = cls.reduction_chunk(df, **kwargs)
+        """
+        Apply reduction_chunk to a Dask partition, skipping empty partitions.
+        """
+
+        # Skip empty partitions
+        if df.shape[0] == 0:
+            return None
+
         # Return a dataframe so that the concatenated version is also a dataframe
+        out = cls.reduction_chunk(df, **kwargs)
         return out.to_frame().T if is_series_like(out) else out
 
     @classmethod
