@@ -359,6 +359,10 @@ def test_cov_corr(df, pdf):
 def test_reduction_on_empty_df():
     pdf = pd.DataFrame()
     df = from_pandas(pdf)
+    print("sum of the df")
+    print(df.sum())
+    print("sum of the pandas df")
+    print(pdf.sum())
     assert_eq(df.sum(), pdf.sum())
 
 
@@ -570,4 +574,66 @@ def test_value_counts_shuffle_properly():
     df = from_pandas(pdf, npartitions=2)
     result = (df["A"] == df["B"]).value_counts()
     expected = (pdf["A"] == pdf["B"]).value_counts()
+    assert_eq(result, expected)
+
+
+@pytest.mark.parametrize("npartitions", [1, 3])
+def test_skip_empty_partitions_dataframe(npartitions):
+    # Base DataFrame
+    pdf = pd.DataFrame({"x": [1, 2, 3], "y": [10, 20, 30]})
+    ddf = from_pandas(pdf, npartitions=npartitions)
+
+    # Artificially make one partition empty using map_partitions
+    def maybe_empty(df, make_empty_partition=False):
+        if make_empty_partition and len(df) > 0:
+            return df.iloc[:0]  # return empty DataFrame
+        return df.assign(z=df.x + df.y)
+
+    # Apply: first partition becomes empty if more than 1 partition
+    ddf = ddf.map_partitions(maybe_empty, make_empty_partition=(npartitions > 1))
+    result = ddf.compute()
+    expected = pdf.assign(z=pdf.x + pdf.y)
+    assert_eq(result, expected)
+
+
+@pytest.mark.parametrize("npartitions", [1, 3])
+def test_skip_empty_partitions_series(npartitions):
+    # Base Series
+    pdf = pd.Series([5, 10, 15])
+    ddf = from_pandas(pdf, npartitions=npartitions)
+
+    # Artificially make the first partition empty if more than 1 partition
+    def maybe_empty(s, make_empty_partition=False):
+        if make_empty_partition and len(s) > 0:
+            return s.iloc[:0]  # return empty Series
+        return s * 2
+
+    ddf = ddf.map_partitions(maybe_empty, make_empty_partition=(npartitions > 1))
+    result = ddf.compute()
+    expected = pdf * 2
+    assert_eq(result, expected)
+
+
+def test_reduction_with_empty_partitions():
+    pdf = pd.DataFrame({"x": [1, 2, 3, 4]})
+    ddf = from_pandas(pdf, npartitions=2)
+
+    # Make first partition empty using map_partitions
+    def empty_first_partition(df, first=True):
+        if first:
+            return df.iloc[:0]
+        return df
+
+    # Replace first partition with empty, second remains
+    first_partition_empty = ddf.map_partitions(empty_first_partition, first=True)
+    result = first_partition_empty.x.sum().compute()
+    expected = pdf.x.iloc[1:].sum()
+    assert result == expected
+
+
+def test_reduction_on_fully_empty_dataframe():
+    pdf = pd.DataFrame(columns=["x", "y"])
+    ddf = from_pandas(pdf, npartitions=2)
+    result = ddf.sum().compute()
+    expected = pdf.sum()
     assert_eq(result, expected)

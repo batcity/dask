@@ -805,8 +805,19 @@ class Reduction(ApplyConcatApply):
         """
 
         # Skip empty partitions
-        if df.shape[0] == 0:
-            return None
+        # if len(df) == 0:
+        #     return None
+
+        # if len(df) == 0:
+        #     if is_series_like(df):
+        #         # preserve dtype and name
+        #         return pd.Series([], dtype=df.dtype, name=getattr(df, "name", None))
+        #     elif isinstance(df, pd.DataFrame):
+        #         # preserve columns and dtypes
+        #         return pd.DataFrame({col: pd.Series([], dtype=dt) for col, dt in df.dtypes.items()})
+        #     else:
+        #         # fallback for scalar-like objects
+        #         return df[:0]
 
         # Return a dataframe so that the concatenated version is also a dataframe
         out = cls.reduction_chunk(df, **kwargs)
