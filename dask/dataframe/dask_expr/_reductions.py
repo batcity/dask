@@ -802,27 +802,32 @@ class Reduction(ApplyConcatApply):
     def chunk(cls, df, **kwargs):
         """
         Apply reduction_chunk to a Dask partition, safely handling empty partitions
-        while preserving correct schema and avoiding len(df).
+        while preserving schema for non-scalar ops and scalar placeholders for reductions.
         """
 
-        # --- Handle empty partitions safely ---
+        # --- Handle empty partitions ---
         if getattr(df, "empty", False):
+            # Check if this reduction is scalar-like (min, max, sum, mean, etc.)
+            # If so, return a scalar placeholder (np.nan)
+            reduction_func = getattr(cls, "reduction_chunk", None)
+            if reduction_func is not None and not isinstance(df, pd.DataFrame):
+                # Series or Index -> scalar-style reduction
+                return np.nan
+
+            # Otherwise, preserve the schema
             if is_series_like(df):
-                # Return an empty Series with the same dtype and name
                 return pd.Series([], dtype=df.dtype, name=getattr(df, "name", None))
             elif isinstance(df, pd.DataFrame):
-                # Return an empty DataFrame with the same columns and dtypes
                 return pd.DataFrame(
                     {col: pd.Series([], dtype=dt) for col, dt in df.dtypes.items()}
                 )
             else:
-                # Scalar-like fallback (e.g., Index)
                 return df.iloc[0:0] if hasattr(df, "iloc") else df[:0]
 
-        # --- Apply the reduction chunk normally ---
+        # --- Apply normal reduction ---
         out = cls.reduction_chunk(df, **kwargs)
 
-        # Ensure DataFrame consistency for concatenation
+        # Normalize for concatenation consistency
         return out.to_frame().T if is_series_like(out) else out
 
     @classmethod
