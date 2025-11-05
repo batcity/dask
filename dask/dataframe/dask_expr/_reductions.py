@@ -801,26 +801,28 @@ class Reduction(ApplyConcatApply):
     @classmethod
     def chunk(cls, df, **kwargs):
         """
-        Apply reduction_chunk to a Dask partition, skipping empty partitions.
+        Apply reduction_chunk to a Dask partition, safely handling empty partitions
+        while preserving correct schema and avoiding len(df).
         """
 
-        # Skip empty partitions
-        # if len(df) == 0:
-        #     return None
+        # --- Handle empty partitions safely ---
+        if getattr(df, "empty", False):
+            if is_series_like(df):
+                # Return an empty Series with the same dtype and name
+                return pd.Series([], dtype=df.dtype, name=getattr(df, "name", None))
+            elif isinstance(df, pd.DataFrame):
+                # Return an empty DataFrame with the same columns and dtypes
+                return pd.DataFrame(
+                    {col: pd.Series([], dtype=dt) for col, dt in df.dtypes.items()}
+                )
+            else:
+                # Scalar-like fallback (e.g., Index)
+                return df.iloc[0:0] if hasattr(df, "iloc") else df[:0]
 
-        # if len(df) == 0:
-        #     if is_series_like(df):
-        #         # preserve dtype and name
-        #         return pd.Series([], dtype=df.dtype, name=getattr(df, "name", None))
-        #     elif isinstance(df, pd.DataFrame):
-        #         # preserve columns and dtypes
-        #         return pd.DataFrame({col: pd.Series([], dtype=dt) for col, dt in df.dtypes.items()})
-        #     else:
-        #         # fallback for scalar-like objects
-        #         return df[:0]
-
-        # Return a dataframe so that the concatenated version is also a dataframe
+        # --- Apply the reduction chunk normally ---
         out = cls.reduction_chunk(df, **kwargs)
+
+        # Ensure DataFrame consistency for concatenation
         return out.to_frame().T if is_series_like(out) else out
 
     @classmethod
